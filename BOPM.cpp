@@ -1,15 +1,15 @@
 #include <iostream>
 #include <iomanip>
-#include <sstream>
 #include <fstream>
 #include <vector>
 #include <string>
 #include <cmath>
 #include <utility>
+#include <cstddef>
 
-double binomialCoeff(int N, int r) {
+double binomialCoeff(std::size_t N, std::size_t r) {
 	double result = 1;
-	for (int i = 1; i <= r; i++) {
+	for (std::size_t i = 1; i <= r; i++) {
 		result *= (N - r + i);
 		result /= i;
 	}
@@ -18,28 +18,30 @@ double binomialCoeff(int N, int r) {
 
 class BOPM {
 private:
-	int steps;				// number of steps
+	std::size_t steps;		// number of steps
 	double S0;				// initial price
-	double S1;				// next step price
+	double S1Up;			// next step up price
+	double S1Down;			// next step down price
 	double probUp;			// probability of upward movement
 	double freq;			// price change frequency per year
 	double maturity;		// duration of option in years
-	double change;			// price change %
+	double UpChange;		// upward price change %
+	double DownChange;		// downward price change %
 
 	std::vector<std::vector<double>> priceTree;
 	std::vector<std::vector<double>> probTree;
 
 public:
 	// constructor
-	BOPM(double S0_, double S1_, double probUp_, double freq_, double maturity_)
-		: steps(static_cast<int>(freq_* maturity_)),
-		S0(S0_), S1(S1_), probUp(probUp_), freq(freq_), maturity(maturity_),
-		change(abs(S1_ - S0_) / S0_) {
-	};
+	BOPM(double S0_, double S1Up_, double S1Down_, double probUp_, double freq_, double maturity_)
+		: steps(static_cast<std::size_t>(freq_ * maturity_)),
+		S0(S0_), S1Up(S1Up_), S1Down(S1Down_), probUp(probUp_), freq(freq_), maturity(maturity_),
+		UpChange((S1Up_ - S0_) / S0_), DownChange((S0_ - S1Down_) / S0_) {
+	}
 
 	// binomial tree, return final prices & probabilities
 	std::pair<std::vector<double>, std::vector<double>> buildTree();
-
+	
 	// export the binomial tree to CSV
 	int exportCSV(const std::string& filename) const;
 
@@ -65,13 +67,13 @@ std::pair<std::vector<double>, std::vector<double>> BOPM::buildTree() {
 
 	std::vector<double> finalPrices, finalProbs;
 
-	for (int i = 0; i <= steps; i++) {
+	for (std::size_t i = 0; i <= steps; i++) {
 		priceTree[i].resize(i + 1);
 		probTree[i].resize(i + 1);
 
-		for (int j = 0; j <= i; j++) {
-			priceTree[i][j] = S0 * pow(1 + change, i - j) * pow(1 - change, j);
-			probTree[i][j] = static_cast<double>(binomialCoeff(i, j)) * pow(probUp, i - j) * pow(1 - probUp, j);
+		for (std::size_t j = 0; j <= i; j++) {
+			priceTree[i][j] = S0 * std::pow(1 + UpChange, static_cast<double>(i - j)) * std::pow(1 - DownChange, static_cast<double>(j));
+			probTree[i][j] = binomialCoeff(i, j) * std::pow(probUp, static_cast<double>(i - j)) * std::pow(1 - probUp, static_cast<double>(j));
 		}
 
 		if (i == steps) {
@@ -89,8 +91,8 @@ int BOPM::exportCSV(const std::string& filename) const {
 		return 1;
 	}
 
-	for (int j = 0; j <= steps; j++) {
-		for (int i = 0; i <= steps; i++) {
+	for (std::size_t j = 0; j <= steps; j++) {
+		for (std::size_t i = 0; i <= steps; i++) {
 			if (j <= i) {
 				ofp << std::fixed << std::setprecision(4)
 					<< priceTree[i][j] << "(" << probTree[i][j] << ")";
@@ -108,11 +110,11 @@ double BOPM::callPrice(const std::vector<double>& finalPrices,
 					   const std::vector<double>& finalProbs,
 					   double strike, double r, double freq) const {
 	double sum = 0.0;
-	for (size_t i = 0; i < finalPrices.size(); i++) {
+	for (std::size_t i = 0; i < finalPrices.size(); i++) {
 		double payoff = std::max(finalPrices[i] - strike, 0.0);
 		sum += payoff * finalProbs[i];
 	}
-	double discount = pow((1 + r / freq), finalPrices.size() - 1);
+	double discount = std::pow((1 + r / freq), static_cast<double>(finalPrices.size() - 1));
 	return sum / discount;
 }
 
@@ -120,11 +122,11 @@ double BOPM::putPrice(const std::vector<double>& finalPrices,
 					  const std::vector<double>& finalProbs,
 					  double strike, double r, double freq) const {
 	double sum = 0.0;
-	for (size_t i = 0; i < finalPrices.size(); i++) {
+	for (std::size_t i = 0; i < finalPrices.size(); i++) {
 		double payoff = std::max(strike - finalPrices[i], 0.0);
 		sum += payoff * finalProbs[i];
 	}
-	double discount = pow((1 + r / freq), finalPrices.size() - 1);
+	double discount = std::pow((1 + r / freq), static_cast<double>(finalPrices.size() - 1));
 	return sum / discount;
 }
 
@@ -138,7 +140,7 @@ void BOPM::printResults(const std::string& optionType,
 		<< std::setw(15) << "Probability"
 		<< "\n";
 
-	for (size_t i = 0; i < finalPrices.size(); i++) {
+	for (std::size_t i = 0; i < finalPrices.size(); i++) {
 		double payoff = (optionType == "Call") ? std::max(finalPrices[i] - strike, 0.0) : std::max(strike - finalPrices[i], 0.0);
 		std::cout << std::setw(15) << std::fixed << std::setprecision(4) << finalPrices[i]
 			<< std::setw(15) << payoff
@@ -151,14 +153,15 @@ void BOPM::printResults(const std::string& optionType,
 int main() {
 	// parameters
 	double initialPrice = 10.0;
-	double nextStepPrice = 11.0;
-	double probUp = 0.50;
-	double frequencyPerYear = 3.0;
+	double nextStepUpPrice = 12.0;
+	double nextStepDownPrice = 9.0;
+	double probUp = 0.60;
+	double frequencyPerYear = 4.0;
 	double maturityInYear = 1.0;
 	double strike = 10.0;
 	double riskFreeRatePA = 0.08;
 
-	BOPM model(initialPrice, nextStepPrice, probUp, frequencyPerYear, maturityInYear);
+	BOPM model(initialPrice, nextStepUpPrice, nextStepDownPrice, probUp, frequencyPerYear, maturityInYear);
 
 	// build tree
 	auto finals = model.buildTree();
