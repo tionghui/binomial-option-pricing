@@ -1,38 +1,5 @@
-# binomial-option-pricing
-A personal project implementing the **Binomial Option Pricing Model (BOPM)** in C++.
-
-## Motivation
-Suppose we are preparing money to buy shares of ABC stock. However, we are concerned that the stock price might increase before we have the money.  
-It would be ideal if we could lock in the current price, or some acceptable price, until the date we are ready to purchase.  
-At the same time, we want the flexibility to walk away if the stock price falls below the locked-in price.
-
-This is where an **option** comes in.  
-An option is a financial contract that gives the buyer the right, but not the obligation, to buy or sell a security.
-
-## Types of Options
-**Call Option** --- Gives the holder the right to **buy** the underlying asset at a specified exercise (strike) price.  
-**Put Option** --- Gives the holder the right to **sell** the underlying asset at a specified exercise (strike) price.  
-**American Option** --- Can be exercised **anytime on or before** the maturity date.  
-**European Option** --- Can be exercised **only on** the maturity date.
-
-## Profit Diagrams
-For a **call option**, we want the exercise price $E$ to be lower than the market price $S$, so we can buy the stock at a discount.  
-If the market price is below the exercise price, we simply let the option expire, losing only the price of option (premium).
-
-The payoff is $`\text{max}(0, S - E)`$ and the profit is $`\text{Payoff}-\text{Premium}`$.
-
-The figure below shows a profit diagram for a call option with a $5 premium and a $100 exercise price.
-
-![Profit Diagram for Call Option](assets/Call_Option.png)
-
-For a **put option**, we want the exercise price to be higher than the market price, so we can sell the stock at a premium.
-
-The payoff is $`\text{max}(0, E - S)`$ and the profit is $`\text{Payoff} - \text{Premium}`$.
-
-The figure below shows a profit diagram for a put option with a $5 premium and a $100 exercise price.
-
-![Profit Diagram for Put Option](assets/Put_Option.png)
-
+# Introduction
+This markdown file explains the concept and code for the binomial option pricing model.
 
 ## Asset Valuation
 The valuation of any asset is based on the **present value of its future cash flows**. Options are no different.
